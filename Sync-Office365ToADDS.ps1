@@ -11,14 +11,14 @@
 	.DESCRIPTION
 		The PowerShell function will connect to your Office 365 / AzureAD and can re-create your Users, Groups, and Contacts in Active Directory. 
 		This is extremly helpful if you are looking to change your identity source from Office 365 (AzureAD) to Active Directory and then have Active Directory sync up to Office 365.
-
+ 
 		This will also re-create Distribution, Security, and Mail-Enabled Security Groups and also populate the membership and owner (managed by). Distribution and Mail-Enabled security groups will SMTP match when you configure AADConnect.
-
+ 
 		Attributes:
 		If Azure AD finds an object where the attribute values are the same for an object coming from Connect (Active Directory) and that it is already present in Azure AD, then the object in Azure AD is taken over by Connect. 
 		The previously cloud-managed object is flagged as on-premises managed. All attributes in Azure AD with a value in on-premises AD are overwritten with the on-premises value. The exception is when an attribute has a NULL value on-premises. 
 		In this case, the value in Azure AD remains, but you can still only change it on-premises to something else.
-
+ 
 		USER ATTRIBUTES IT WILL COPY OVER
 		- First Name
 		- Last Name
@@ -35,14 +35,14 @@
 		- Department
 		- City
 		- Office Phone (telephone number)
-
+ 
 		MAIL CONTACT ATTRIBUTES IT WILL COPY OVER
 		- Display Name
 		- External Email 
 		- Proxy Addresses
 		- First Name
 		- Last Name
-
+ 
 		DISTRIBUTION GROUP ATTRIBUTES IT WILL COPY OVER
 		- Name
 		- Display Name
@@ -51,7 +51,7 @@
 		- Description
 		- Members
 		- Group Owner (Managed By)
-
+ 
 		MAIL-ENABLED SECURITY GROUP ATTRIBUTES IT WILL COPY OVER
 		- Name
 		- Display Name
@@ -59,7 +59,7 @@
 		- Description
 		- Members
 		- Group Owner (Managed By)
-
+ 
 		SECURITY GROUP ATTRIBUTES IT WILL COPY OVER
 		- Name
 		- Display Name
@@ -67,52 +67,52 @@
 		- Description
 		- Members
 		- Group Owner (Managed By)
-
+ 
 	.PARAMETER SyncUsers
 		[switch] Syncs Office 365 Users to ADDS
-
+ 
 	.PARAMETER UsersOU
 		[string] Optional. Can specify which OU to create the users in
-
+ 
 	.PARAMETER PasswordForAllUsers
 		[string] Required if you use the SyncUsers switch. Specifies the password that will be set for all users that are created. Converts the plain text string to secure.string
-
-	.PARAMETER DomainMoveUsersToOU
+ 
+	PARAMETER DomainMoveUsersToOU
 		[switch] Optional. Will move users to an OU that matches the domain name in their UPN. If the UPN is thelazyadministrator.com it will find an OU with the name "thelazyadministrator" and move the user there. If the OU is not present it will keep the user in the default Users OU
-
+ 
 	.PARAMETER SyncContacts
 		[switch] Syncs Office 365 Mail Contacts to ADDS
-
+ 
 	.PARAMETER ContactsOU
 		[string] Optional. Can specify which OU to create the mail contacts in
-
+ 
 	.PARAMETER SyncDistributionGroups
 		[switch] Syncs Office 365 Distribution Groups to ADDS
-
+ 
 	.PARAMETER DistributionGroupsOU
 		[string] Optional. Can specify which OU to create the Distribution Groups in
-
+ 
 	.PARAMETER SyncMailEnabledSecurityGroups
 		[switch] Syncs Office 365 Mail Enabled Security Groups to ADDS
-
+ 
 	.PARAMETER MailEnabledSecurityGroupsOU
 		[string] Optional. Can specify which OU to create the Mail-Enabled Security Groups in
-
+ 
 	.PARAMETER SyncSecurityGroups
 		[switch] Syncs Office 365 Security Groups to ADDS
-
+ 
 	.PARAMETER DistributionGroupsOU
 		[string] Optional. Can specify which OU to create the Security Groups in
-
+ 
 	.EXAMPLE
 		Sync-Office365ToADDS -SyncUsers -PaswordForAllUsers "Temp123!"
-
+ 
 	.EXAMPLE
 		Sync-Office365ToADDS -SyncContacts -SyncDistributionGroups
-
+ 
 	.EXAMPLE
 		Sync-Office365ToADDS -SyncSecurityGroups -SecurityGroupsOU "OU=Users,OU=bwya77,DC=lazyadmin,DC=com"
-
+ 
 	.EXAMPLE
 		Sync-Office365ToADDS -SyncUsers -PaswordForAllUsers "Temp123" "OU=Users,OU=Chicago,DC=lazyadmin,DC=com"
 		
@@ -252,6 +252,10 @@ function Sync-Office365ToADDS
 				
 				
 				$SamAccountName = $user.UserPrincipalName.split("@") | Select-Object -First 1
+
+                if ($SamAccountName.Length -ge 20){
+                    $SamAccountName = $SamAccountName.Substring(0,20)
+                    }
 				
 				Write-Host "Creating the user, '$($User.DisplayName)' as an Active Directory user... "
 				If ($Null -ne $PrimEMail)
@@ -479,7 +483,7 @@ function Sync-Office365ToADDS
 				$DistroGroupDomain = (($group.PrimarySmtpAddress).Split("@") | Select-Object -Last 1).Split(".") | Select-Object -First 1
 				Write-Host "The domain is $DistroGroupDomain"
 				Write-Host "Finding an OU that contains $DistroGroupDomain"
-				$DynOU = (Get-ADOrganizationalUnit -Filter * | Where-Object { $_.Name -like "*$DistroGroupDomain*" } -ErrorAction SilentlyContinue).DistinguishedName
+				$DynOU = (Get-ADOrganizationalUnit -Filter * | Where-Object { $_.Name -like "*$DistroGroupDomain*" } -ErorAction SilentlyContinue).DistinguishedName
 				If ($null -eq $DynOU)
 				{
 					Write-Host "No OU was found to move $($Group.DisplayName) to. Contact will be at the default Users OU"
@@ -662,4 +666,3 @@ function Sync-Office365ToADDS
 		}
 	}
 }
-
